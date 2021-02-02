@@ -7,6 +7,9 @@ verify_ssl = true
 
 [packages]
 numpy = "*"
+pandas = "*"
+matplotlib = "*"
+scikit-image = "*"
 
 [requires]
-python_version = "3.9.*"
+python_version = "3.9.1"
