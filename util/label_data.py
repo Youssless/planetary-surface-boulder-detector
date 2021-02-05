@@ -1,6 +1,9 @@
 import json
 import math
 import cv2 as cv
+import numpy as np
+
+from os import walk
 
 far_dist = 3000
 DEM_X = 1024
@@ -11,11 +14,12 @@ i = 0
 
 coords = {}
 
-# coord_ranges = []
+# #coord_ranges = []
 # for i in range(400):
 #     camera_p = 0
 #     with open("../fli/flight1.fli", "r") as f:
-#         line = f.readline().split()[1:5] 
+#         line = f.readline().split()[1:5]
+
         
 #         near_dist = int(line[3]) # camera height
 
@@ -45,89 +49,113 @@ coords = {}
 #                     # add to dictionary
 
 
-
-def normalise_coord(value, min_v, max_v) -> float:
-    """Normalise ethier x or y coordinates between 0 and 1. 
-        
-        This will give a percentage to map the actual boulder coordinate with
-        the image boulder coordinate.
-
-    Parameters
-    ----------
-    value: float
-        Actual boulder coordinate in ethier x or y
-    min_v: float
-        Actual axis range. If value specified is an x coordinate then the min_v
-            should be in the x axis and vice versa
-    max_v: float
-        Actual axis range. If value specified is an x coordinate then the min_v
-            should be in the x axis and vice versa
-
-    Returns
-    -------
-    float
-        Percentage that maps to pixel coordinates of the image
-    """
-    return abs((value-min_v)/(max_v-min_v))
+camera_pos = []
+with open("../fli/flight1.fli", "r") as f:
+    for line in f.readlines():
+        camera_pos.append(line.split()[1:4])
 
 
-#print(to_image_coords())
+def y_shift_coeff(img_h) -> float:
+    return (1/512)*(512/0.366)
 
-def to_image_coords(normalised_coord, min_d, max_d) -> float:
-    """Convert the boulder coordinate to pixel coordinate
+def y_shift(img_h):
+    y_shifts = []
+    for i in range(400):
+        y_shifts.append(512 - abs(y_shift_coeff(img_h)*float(camera_pos[i][1])))
 
-    Parameters
-    ----------
-    normalised_coord: float
-        Percentage used to multiply the actual boulder coord with the width of the image.
-        Percentage is returned in normalised_coord(value, min_v, max_v)
-    min_d: float
-        Minimum coord for the destination. Axis needs to match normalised_coord percentage
-    max_d: float
-        Maximum coord for the destination. Axis needs to match normalised_coord percentage
+    return y_shifts
 
-    """
-    return normalised_coord*(abs(max_d-min_d)) + min_d
 
 # with open("sample.json", "w") as outfile:  
 #     json.dump(coords, outfile) 
 
+"""
+TODO
+    - read json file 
+        - for each image in the json file
+            - create a csv file with the image name and the pixel coordinates for each boulder
+"""
+
 FOV = 30
 IMAGE_DIM = 512
 
-def meters_per_pixel(cam_h):
+def meters_per_pixel(cam_h) -> float:
     ratio = 2*cam_h*math.tan(math.radians(FOV/2))
 
-    return IMAGE_DIM / ratio
+    return ratio / IMAGE_DIM
 
-boulders = [
-        [-19.947648514062, 14.047670178115],
-        [18.459062092006, -34.864745568484],
-        [72.589937597513, 3.3121486194432],
-        [-6.696302909404, 56.250563822687],
-        [9.7725815139711, -53.415604867041],
-        [113.81692904979, -40.931636933237],
-        [-43.676669709384, -57.721660472453],
-        [79.736682586372, 45.147613156587],
-        [101.56002314761, -50.523466430604]
-]
+def to_pixel_coords():
+    mpp = meters_per_pixel(350)
+    coords = []
+    pixel_coord = []
+    pixel_coords = {}
 
-boulders_pix = []
+    y_shifts = y_shift(IMAGE_DIM)
+    with open("sample.json", "r") as read_file:
+        data = json.load(read_file)
+        
+        for i, (k,v) in enumerate(data.items()):
+            coords.append(v)
+            for coords in v:
+                
+                x = (IMAGE_DIM/2) + (float(coords[0])/mpp)
+                y = (IMAGE_DIM/2) + (float(coords[1])/mpp)
+                
+                y = y_shifts[i] - y
+                pixel_coord.append([x, y])
+                
+            pixel_coords[i] = pixel_coord
+            pixel_coord = []
 
-for boulder in boulders:
-    boulder_x = (IMAGE_DIM/2) + (boulder[0]*meters_per_pixel(350))
-    boulder_y = (IMAGE_DIM/2) + (boulder[1]*meters_per_pixel(350))
+    with open("pixel_coords.json", "w") as write_file:
+        json.dump(pixel_coords, write_file)
+               
+    return pixel_coords
 
-    boulders_pix.append([boulder_x, boulder_y])
-print(boulders_pix)
 
-image = cv.imread('../frames/scr_00000.png')
 
-for boulder in boulders_pix:
-    cv.drawMarker(image, (int(boulder[0]), 512-int(boulder[1])), (0, 0, 255),
-        markerType=cv.MARKER_SQUARE, markerSize=1, thickness=2)
-# image = cv.circle(image, (int(boulders_pix[0][0]),512-int(boulders_pix[0][1])), radius=0, color=(0, 0, 255), thickness=2)
-cv.imshow("Image", image)
+if __name__ == "__main__":
+    px_coords = to_pixel_coords()
 
-cv.waitKey(0)
+    _, _, filenames = next(walk("../frames"))
+
+    #image = cv.imread('../frames/frame_00000.png')
+
+    for i, (k, v) in enumerate(px_coords.items()):
+        image = cv.imread('../frames/{0}'.format(filenames[int(k)]))
+        for points in v:
+            cv.drawMarker(image, (int(points[0]), int(points[1])), (0, 0, 255),
+                 markerType=cv.MARKER_SQUARE, markerSize=1, thickness=2)
+        
+        cv.imwrite("../truths/{0}".format(filenames[int(k)]), image)
+
+    # boulders = [
+    #     [97.377018071711, -414.80678413063],
+    #     [63.532890286297, -458.619938232],
+    #     [-80.772529356182, -409.36112124473],
+    #     [-4.3816952966154, -453.06013617665],
+    #     [10.490165557712, -373.05140681565],
+    #     [31.805287115276, -376.29753071815],
+    #     [97.15769207105, -378.86919500306],
+    #     [-58.256218209863, -432.81263904646]
+    # ]
+
+    # boulders_pix = []
+
+    # for boulder in boulders:
+    #     boulder_x = (IMAGE_DIM/2) + (boulder[0]/meters_per_pixel(350)) 
+    #     boulder_y = (IMAGE_DIM/2) + (boulder[1]/meters_per_pixel(350))
+
+    #     boulders_pix.append([boulder_x, boulder_y])
+    # print(boulders_pix)
+
+    # image = cv.imread('../frames/frame_00399.png')
+
+    # for boulder in boulders_pix:
+    #     cv.drawMarker(image, (int(boulder[0]), -578-int(boulder[1])), (0, 0, 255),
+    #         markerType=cv.MARKER_SQUARE, markerSize=1, thickness=2)
+    # # image = cv.circle(image, (int(boulders_pix[0][0]),512-int(boulders_pix[0][1])), radius=0, color=(0, 0, 255), thickness=2)
+    # cv.imshow("Image", image)
+
+    # cv.waitKey(0)
 
