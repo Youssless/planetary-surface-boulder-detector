@@ -3,6 +3,7 @@ import math
 import cv2 as cv
 import numpy as np
 
+
 from os import walk
 
 far_dist = 3000
@@ -156,9 +157,11 @@ def to_pixel_coords(cam_h) -> list:
                 
                 x = (IMAGE_DIM/2) + (float(coords[0])/mpp)
                 y = (IMAGE_DIM/2) + (float(coords[1])/mpp)
+
+                size = math.trunc(float(coords[2])/mpp)
                 
                 y = y_shifts[i] - y
-                pixel_coord.append([x, y])
+                pixel_coord.append([x-(size), y-(size), size])
                 
             pixel_coords[i] = pixel_coord
             pixel_coord = []
@@ -182,8 +185,11 @@ def annotate_images(cam_h):
     for i, (k, v) in enumerate(px_coords.items()):
         image = cv.imread('../frames/{0}'.format(filenames[int(k)]))
         for points in v:
-            cv.drawMarker(image, (int(points[0]), int(points[1])), (0, 0, 255),
-                 markerType=cv.MARKER_SQUARE, markerSize=1, thickness=2)
+            start_point = (int(points[0]), int(points[1]))
+            end_point = (int(points[0])+int(2*points[2]), int(points[1])+int(2*points[2]))
+            cv.rectangle(image, start_point, # start point
+                                end_point, # end point
+                                (0, 0, 255), thickness=1)
         
         cv.imwrite("../truths/{0}".format(filenames[int(k)]), image)
 
