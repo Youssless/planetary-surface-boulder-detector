@@ -42,8 +42,6 @@ class Camera:
         return "FOV: {0}\nHeight: {1}\nfli_file: {2}".format(fov, height, fli_file)
 
 
-cam = Camera(fov=30, fli_file="../fli/flight1.fli")
-
 def get_boulder_info():
     boulder_info = []
     with open("../../PANGU/PANGU_5.00/models/lunar_surface/boulder_list.txt") as f:
@@ -86,7 +84,7 @@ def y_shift(cam_h) -> list:
     y_shifts = []
     for i in range(400):
         # shift the y depending on the camera position
-        y_shifts.append(512 - abs(pixels_per_meter(cam_h)*float(camera_pos[i][1])))
+        y_shifts.append(512 - abs(float(camera_pos[i][1])/meters_per_pixel(cam_h)))
 
     return y_shifts
 
@@ -101,20 +99,20 @@ def meters_per_pixel(cam_h) -> float:
         float: returns the meter per pixel ratio
     '''
 
-    ratio = 2*cam_h*math.tan(math.radians(FOV/2))
+    ratio = 2*cam_h*math.tan(math.radians(FOV/2))-3
 
     return ratio / IMAGE_DIM
 
-def search_boulders():
+def search_boulders(camera):
     i = 0
     coords = {}
 
-    cam_locs = cam.get_locations()
+    cam_locs = camera.get_locations()
     boulder_info = get_boulder_info()
 
     search_range = np.array([
-                        [-(IMAGE_DIM * meters_per_pixel(cam.height))/2, (IMAGE_DIM * meters_per_pixel(cam.height))/2], # x
-                        [-(IMAGE_DIM * meters_per_pixel(cam.height))/2, (IMAGE_DIM * meters_per_pixel(cam.height))/2]  # y
+                        [-(IMAGE_DIM * meters_per_pixel(camera.height))/2, (IMAGE_DIM * meters_per_pixel(camera.height))/2], # x
+                        [-(IMAGE_DIM * meters_per_pixel(camera.height))/2, (IMAGE_DIM * meters_per_pixel(camera.height))/2]  # y
                     ], dtype="float")
     
 
@@ -133,7 +131,7 @@ def search_boulders():
         json.dump(coords, write_file)
 
 
-def to_pixel_coords(cam_h) -> list:
+def to_pixel_coords(camera) -> list:
     '''Calculate the pixel coordinates per boulder per image and store them in JSON format
 
         Args:
@@ -142,12 +140,13 @@ def to_pixel_coords(cam_h) -> list:
         Returns:
             pixel_coords([float]): returns the pixel coordinate per boulder per image
     '''
-    mpp = meters_per_pixel(350)
+    # mpp = meters per pixel constant 
+    mpp = meters_per_pixel(camera.height)
     coords = []
     pixel_coord = []
     pixel_coords = {}
 
-    y_shifts = y_shift(cam_h)
+    y_shifts = y_shift(camera.height)
     with open("boulder_cppi.json", "r") as read_file:
         data = json.load(read_file)
         
@@ -155,47 +154,85 @@ def to_pixel_coords(cam_h) -> list:
             coords.append(v)
             for coords in v:
                 
+                # center of the image + pixel coordinate of the boulder
                 x = (IMAGE_DIM/2) + (float(coords[0])/mpp)
                 y = (IMAGE_DIM/2) + (float(coords[1])/mpp)
 
-                size = math.trunc(float(coords[2])/mpp)
+                # size of boulders in pixel coordinates
+                size = float(coords[2])/mpp
                 
+                # shift the y to fit the coordinate system of opencv
                 y = y_shifts[i] - y
-                pixel_coord.append([x-(size), y-(size), size])
-                
+
+                pixel_coord.append([x-(size/2), y-(size/2), size])
+  
             pixel_coords[i] = pixel_coord
             pixel_coord = []
-
+    
     with open("pixel_coords.json", "w") as write_file:
         json.dump(pixel_coords, write_file)
                
     return pixel_coords
 
-def annotate_images(cam_h):
+def annotate_images(camera):
     '''Annotate each boulder in each image with a red point
 
         Args:
             cam_h (int): Camera height in meters that was used to take the image
     '''
     # pixel coordinate list of all the boulders in each image
-    px_coords = to_pixel_coords(cam_h) 
+    px_coords = to_pixel_coords(camera) 
     _, _, filenames = next(walk("../frames"))
 
     # read, plot and write each image in the dataset
     for i, (k, v) in enumerate(px_coords.items()):
         image = cv.imread('../frames/{0}'.format(filenames[int(k)]))
         for points in v:
-            start_point = (int(points[0]), int(points[1]))
-            end_point = (int(points[0])+int(2*points[2]), int(points[1])+int(2*points[2]))
+            start_point = (int(math.ceil(points[0])), int(math.ceil(points[1])))
+            end_point = (int(math.ceil(points[0] + (points[2]))), int(math.ceil(points[1]+(points[2]))))
             cv.rectangle(image, start_point, # start point
                                 end_point, # end point
                                 (0, 0, 255), thickness=1)
         
         cv.imwrite("../truths/{0}".format(filenames[int(k)]), image)
 
+def bounding_box():
+    pass
+
+def annotate_images_v2():
+    _, _, filenames = next(walk("../frames"))
+
+    for f in filenames:
+        image = cv.imread("../frames/{0}".format(f))
+        
+        # convert the image to hsv format (hue, saturation, value)
+        image_hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
+
+        # regions of interest in white, background in black
+        _, thresh = cv.threshold(image_hsv[:,:,0], 0, 255, 
+            cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
+        
+        # bitwise and the image and the regions of interest
+        image_boulders = cv.bitwise_and(image, image, mask=thresh)
+        cv.imwrite("../image_boulders/{0}".format(f), image_boulders)
+        # convert the image of boulders into black and white
+        gray = cv.cvtColor(image_boulders, cv.COLOR_BGR2GRAY)
+        thresh = cv.threshold(gray,25,255, cv.THRESH_BINARY)[1]
+
+        # apply bounding boxes around contours
+        contours = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        contours = contours[0] if len(contours) == 2 else contours[1]
+        for cntr in contours:
+            x,y,w,h = cv.boundingRect(cntr)
+            cv.rectangle(image, (x, y), (x+w, y+h), (0, 0, 255), 1)
+        
+        cv.imwrite("../truths_v2/{0}".format(f), image)
 
 if __name__ == "__main__":
-    search_boulders()
-    to_pixel_coords(cam.height)
-    annotate_images(cam.height)
+    cam = Camera(fov=30, fli_file="../fli/flight1.fli")
+
+    annotate_images_v2()
+    # search_boulders(cam)
+    # to_pixel_coords(cam)
+    # annotate_images(cam)
 

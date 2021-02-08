@@ -1,2 +1,0 @@
-image_width = 300m
-image_dim = 1240*1240 pixels
