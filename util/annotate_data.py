@@ -199,39 +199,12 @@ def annotate_images(camera):
 def bounding_box():
     pass
 
-def annotate_images_v2():
-    _, _, filenames = next(walk("../frames"))
 
-    for f in filenames:
-        image = cv.imread("../frames/{0}".format(f))
-        
-        # convert the image to hsv format (hue, saturation, value)
-        image_hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
-
-        # regions of interest in white, background in black
-        _, thresh = cv.threshold(image_hsv[:,:,0], 0, 255, 
-            cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
-        
-        # bitwise and the image and the regions of interest
-        image_boulders = cv.bitwise_and(image, image, mask=thresh)
-        cv.imwrite("../image_boulders/{0}".format(f), image_boulders)
-        # convert the image of boulders into black and white
-        gray = cv.cvtColor(image_boulders, cv.COLOR_BGR2GRAY)
-        thresh = cv.threshold(gray,25,255, cv.THRESH_BINARY)[1]
-
-        # apply bounding boxes around contours
-        contours = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-        contours = contours[0] if len(contours) == 2 else contours[1]
-        for cntr in contours:
-            x,y,w,h = cv.boundingRect(cntr)
-            cv.rectangle(image, (x, y), (x+w, y+h), (0, 0, 255), 1)
-        
-        cv.imwrite("../truths_v2/{0}".format(f), image)
 
 if __name__ == "__main__":
     cam = Camera(fov=30, fli_file="../fli/flight1.fli")
 
-    annotate_images_v2()
+    #annotate_images_v2()
     # search_boulders(cam)
     # to_pixel_coords(cam)
     # annotate_images(cam)
