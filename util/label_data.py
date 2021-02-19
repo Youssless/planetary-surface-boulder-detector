@@ -26,7 +26,7 @@ def isolate_ROI(target):
 
     return image, thresh
 
-    
+
 
 def calculate_ROI(target, ROI, image):
     '''Add bounding boxes for each region of interest
@@ -51,7 +51,7 @@ def label_ROI():
     '''Label regions of interest
     '''
     _, _, filenames = next(walk("../data/frames"))
-    data = pd.DataFrame([])
+    data = []
 
     for f in filenames:
         # isolate the regions of interest
@@ -62,10 +62,12 @@ def label_ROI():
 
         # append bounding boxes in csv format
         for b in boxes:
-            data = data.append(pd.DataFrame({"bbox": str(b)}, index=[f]))
+            data.append([f, b])
+    
+    df = pd.DataFrame(data, columns=['image_id', 'bbox'])
     
     # add bounding boxes to csv
-    data.to_csv('../data/test.csv')
+    df.to_csv('../data/test.csv')
         
 if __name__ == "__main__":
     label_ROI()
