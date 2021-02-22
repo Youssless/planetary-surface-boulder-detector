@@ -10,7 +10,28 @@ import os
 class LunarSurfaceDataset(Dataset):
 
     def __init__(self, root_dir, csv_file, transform=None):
-        
+        '''formats and loads the dataset into an object ready for training and testing
+            
+            LunarSurfaceDataset contains images and labels that are loaded into and object.
+                The images are artificial images of the lunar surface, in a top down view
+                generated with PANGU.
+
+                The images contain boulders which are targets for detection. The boulders
+                are all labelled with labels either 0 or 1 (0 = no boulder, 1 = boulder).
+                
+                In this dataset all the boulders are labelled 1. This will be used in the
+                region proposal network (RPN) to calculate the objectness score to be used
+                in predicting the bounding boxes.
+
+                The bounding boxes in the dataset is in the format [x, y, w, h]. This is then
+                formatted in __get_item__(index) to [x_min, y_min, x_max, y_max] for training.
+
+                Args:
+                    root_dir (str): root directory of the dataset
+                    csv_file (str): file name for the csv containing the image name and 
+                        the bounding box dimensions for each boulder
+                    transform(list): list of image transformations to apply to each image
+        '''
         self.root_dir = root_dir
         self.transform = transform
         self.data = pd.read_csv(os.path.join(self.root_dir, csv_file))
@@ -22,12 +43,23 @@ class LunarSurfaceDataset(Dataset):
         self.imgs = list(os.listdir(os.path.join(self.root_dir, "frames")))
 
     def __len__(self):
-        return(len(self.imgs))
+        '''number of items in the dataset
 
-    '''
-    
-    '''    
+            Returns:
+                (int): length of the image dataset
+        '''
+        return (len(self.imgs))
+
+
     def __getitem__(self, index):
+        '''formats and querys the dataset based on the index
+        
+            Args:
+                index (int): index of the item in the dataset
+            Returns:
+                image (torch.tensor): the loaded image
+                targets (dict): {boxes: torch.int64, labels: torch.int64}
+        '''
         image = Image.open(os.path.join(self.root_dir, "frames", self.imgs[index]))
 
         # extract only the bouding boxes with the current index
