@@ -46,18 +46,33 @@ data = [[201.5483335343505, 217.65367308237143],
         [358.2835642167374, 61.09003972095513],
         [473.659502181912, 132.75926956555134]]
 
+data = np.array(data, dtype="uint32")
 image = cv2.imread('../frames/frame_00000.png')
 
-data = np.array(data)
-data = np.floor(data)
-data = data.astype(int)
-#print(tuple(int(data[0])))
+imhsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+ret, thresh = cv2.threshold(imhsv[:,:,0], 0, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
 
-data = map(tuple, data)
-data = tuple(data)
-print(data)
+fin = cv2.bitwise_and(image, image, mask = thresh)
 
-for i in range(12):
-    cv2.rectangle(image, (data[i][0]-5, data[i][1]-5), (data[i][0]+5, data[i][1]+5), (0, 0, 255), 1)
-cv2.imshow("Image", image)
+
+
+original = fin.copy()
+
+gray = cv2.cvtColor(fin,cv2.COLOR_BGR2GRAY)
+
+# threshold
+thresh = cv2.threshold(gray,25,255,cv2.THRESH_BINARY)[1]
+result = fin.copy()
+contours = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+contours = contours[0] if len(contours) == 2 else contours[1]
+for cntr in contours:
+    x,y,w,h = cv2.boundingRect(cntr)
+    cv2.rectangle(image, (x, y), (x+w, y+h), (0, 0, 255), 1)
+    print("x,y,w,h:",x,y,w,h)
+ 
+# save resulting image
+cv2.imwrite('two_blobs_result.jpg',result)      
+
+# show thresh and result    
+cv2.imshow("bounding_box", image)
 cv2.waitKey(0)
