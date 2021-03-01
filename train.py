@@ -12,16 +12,18 @@ import math
 import time
 import numpy as np
 
-# image preprocessing
-transform = transforms.Compose(
-    [
-        transforms.Grayscale(),
-        transforms.ToTensor()
-    ]
-)
+import cv2
+import matplotlib.pyplot as plt
 
-# data set from custom data loader in util.data_loader
-dataset = dl.LunarSurfaceDataset("data", "test.csv", transform=transform)
+
+transform = transforms.Compose(
+        [
+            transforms.Grayscale(),
+            transforms.ToTensor()
+        ]
+    )
+
+dataset = dl.LunarSurfaceDataset("../data", "test.csv", transform=transform)
 
 # randomly split the dataset 80/20
 train_size = math.ceil(0.8*len(dataset))
@@ -47,25 +49,22 @@ model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 device = torch.device("cuda")
 model = model.to(device)
 
-# load the hyperparameters in the optimiser (weights and biases)
 params = [p for p in model.parameters() if p.requires_grad]
 optimiser = torch.optim.SGD(params, lr=0.01)
 
 num_epochs = 1
+losses = []
 for epoch in range(num_epochs):
     start_time = time.time()
-    losses = []
+    
     print("Epoch {0}".format(epoch+1))
     for images, targets in trainloader:
-        # load the images and labels to the specified device
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
-        # train the model add up the loss for the batch
         train_losses = model(images, targets)
         total_loss = sum(loss for loss in train_losses.values())
         
-        # before gradient descent, zero out the gradients from the previous epoch
         optimiser.zero_grad()
         total_loss.backward()
         optimiser.step()
@@ -74,3 +73,37 @@ for epoch in range(num_epochs):
 
     end_time = time.time() - start_time
     print("Epoch training time {0}m{1}s\n".format(end_time // 60, end_time % 60))
+    
+
+
+# testing the model
+with torch.no_grad():
+    #images, targets = next(iter(testloader))
+    
+    for i, (images, targets) in enumerate(testloader):
+        images = list(image.to(device) for image in images)
+        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+        print(len(images))
+
+        # setting the model to testing mode
+        model.eval()
+
+        #cpu = torch.device('cpu')
+
+        outputs = model(images)
+        outputs = [{k: v.to(device) for k, v in t.items()} for t in targets]
+        
+        print(outputs)
+
+        sample_image = images[0].permute(1, 2, 0).cpu().data.numpy()
+        sample_bbox = outputs[0]['boxes']
+
+        fig, ax = plt.subplots(1)
+        plt.rcParams['figure.figsize'] = [40, 40]
+        for bbox in sample_bbox:
+            xy_min = tuple(bbox[:2])
+            xy_max = tuple(bbox[2:])
+            cv2.rectangle(sample_image, xy_min, xy_max, (0, 0, 255), thickness=1)
+
+        ax.imshow(sample_image)

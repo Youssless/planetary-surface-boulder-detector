@@ -3,7 +3,7 @@ import math
 import cv2 as cv
 import numpy as np
 
-
+import os
 from os import walk
 
 far_dist = 3000
@@ -55,7 +55,7 @@ def get_boulder_info():
 
 
 camera_pos = []
-with open("../fli/flight1.fli", "r") as f:
+with open(os.path.join("fli", "flight1.fli"), "r") as f:
     for line in f.readlines():
         camera_pos.append(line.split()[1:4])
 
