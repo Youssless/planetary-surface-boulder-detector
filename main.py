@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import cv2
 
 import util.conversions as c
+import numpy as np
 
 class LunarSurfaceImageLoader(Dataset):
 
@@ -53,7 +54,7 @@ in_features = model.roi_heads.box_predictor.cls_score.in_features
 # modify the fast r-cnn part
 model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 
-model.load_state_dict(torch.load(os.path.join("model", "fasterrcnn_boulder_detector.pt")))
+#model.load_state_dict(torch.load(os.path.join("model", "fasterrcnn_boulder_detector.pt")))
 
 device = torch.device('cuda')
 model = model.to(device)
@@ -113,18 +114,56 @@ def plot_bounding_boxes(num_plots):
             xy_min = (int(bboxes[:2][0]), int(bboxes[:2][1]))
             xy_max = (int(bboxes[2:][0]), int(bboxes[2:][1]))
             cv2.rectangle(image, xy_min, xy_max, (0, 0, 255), thickness=1)
-            break
+            
         #fig, ax = plt.subplots(1)
         #ax.imshow(image)
         #plt.show()
-        cv2.imshow("", image)
-        cv2.waitKey(0)
+        cv2.imwrite("data/test_data_PANGU/outputs/{}.png".format(i), image)
 
-plot_bounding_boxes(1)
+def get_cam_pos(fli_file):
+    cam_pos = []
+    with open(os.path.join("fli", fli_file)) as f:
+        for line in f.readlines():
+            line = line.split()
+            cam_pos.append([int(line[1]), int(line[2])])
 
-def to_boulderlist():
+    return cam_pos
+
+
+def to_PANGU_coordinates():
     bboxes = load_bounding_boxes()
+    cam_pos = get_cam_pos("flight2.fli")
+    center_points = []
 
-    for k, v in bboxes.items():
-        pass
+    for i, (k, v) in enumerate(bboxes.items()):
+        cp = []
+        for j, bbox in enumerate(v):
+            center = [abs((bbox[2]-bbox[0])/2), abs((bbox[3]-bbox[1])/2)]
+            y_shift = 512-v[j][1]
+
+            IMAGE_center_point = np.array([v[j][0]+center[0], y_shift-center[1]])
+            PANGU_center_point = cam_pos[i] + ((IMAGE_center_point-250)*c.meters_per_pixel(350))
+
+            if (-1024 <= PANGU_center_point[0] <= 1024) and (-512 <= PANGU_center_point[1] <= 512):
+                cp.append(PANGU_center_point.tolist())
+
+        center_points.append(cp)
+
+    return center_points
+    
+
+def generate_boulderlist(file):
+    center_points = to_PANGU_coordinates()
+    # write to boulder list to use as input for PANGU
+    write_list = []
+    with open(file, "w") as f:
+        for boulder_points in center_points:
+            for point in boulder_points:
+                write_list.append("{0} {1}".format(point[0], point[1]))
+        
+        f.write("\n".join(write_list))
+
+if __name__ == '__main__':
+    #plot_bounding_boxes(len(input_images))
+    generate_boulderlist("boulder_list.txt")
 
