@@ -1,4 +1,0 @@
--flight ..\..\..\..\planetary-surface-boulder-detector\fli\flight1.fli ^
-	-movie ^
-	-quit ^
-	-savefmt ..\..\..\..\planetary-surface-boulder-detector\frames\frame_%%05d ^

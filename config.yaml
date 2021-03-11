@@ -1,0 +1,38 @@
+---
+# labels: two labels -> boulder and no boulder
+common:
+  labels: 2
+
+# height: camera height in meters in PANGU or from an input image
+# origin: camera center point in PANGU or from an input image
+# fov: field of view of the camera in PANGU or from an input image 
+camera:
+  height: 350
+  origin: [0, 0, 0]
+  fov: 30
+
+# size x y: size of the surface model or target image 
+surface:
+  size: [1024, 512]
+
+# train: True to train the model. If training is False then the model will not be able to validate
+# validate: True to validate the model while training. This will increase the training time
+# device: set the default device for evaluation. Options include cuda and cpu
+# epochs: number of times to train the model
+# show_output: True to show the predicted bounding boxes drawn on a random example image
+training:
+  train: False
+  validate: True
+  device: "cuda"
+  epochs: 1
+  show_output: False
+
+# model: saved model location from training
+# evaluate: True to use the loaded model to generate outputs of bounding boxes
+# device: set the default device for evaluation. Options include cuda and cpu
+evaluation:
+  model: "model/fasterrcnn_boulder_detector.pt"
+  evaluate: True
+  device: "cuda"
+
+
