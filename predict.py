@@ -51,9 +51,10 @@ in_features = model.roi_heads.box_predictor.cls_score.in_features
 # modify the fast r-cnn part
 model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 
-#model.load_state_dict(torch.load(os.path.join("model", "fasterrcnn_boulder_detector.pt")))
+device = torch.device('cpu')
+model.load_state_dict(torch.load(os.path.join("model", "fasterrcnn_boulder_detector.pt"), map_location=device))
 
-device = torch.device('cuda')
+
 model = model.to(device)
 
 outputs = {}
@@ -61,7 +62,6 @@ bboxes = {}
 
 cpu_device = torch.device("cpu")
 imshow = False
-
 
 with torch.no_grad():
     for i, images in enumerate(imageloader):
@@ -89,5 +89,6 @@ with torch.no_grad():
 
                 ax.imshow(sample_image)
 
+                
 with open('model/output/bboxes.json', 'w') as outfile:
     json.dump(bboxes, outfile, sort_keys=True, indent=4)
