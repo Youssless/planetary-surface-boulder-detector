@@ -7,13 +7,13 @@ from util import utils
 
 import math
 
-SIZE_X = 1024
-SIZE_Y = 512
+SIZE_X = 1200 / 2
+SIZE_Y = 1200 / 2 
 CAM_H = 350
-IMG_SIZE = 512
+IMG_SIZE = 1200
 
-BBOXES = 'data/bboxes.json'
-IMAGE_DIR = 'data/test_data_PANGU'
+BBOXES = 'model/output/bboxes_LRO.json'
+IMAGE_DIR = 'data/test_data_LRO'
 FLI_FILE = 'fli/flight2.fli'
 
 TARGET_DIR = "../PANGU/PANGU_5.00/models"
@@ -21,8 +21,8 @@ TARGET_DIR = "../PANGU/PANGU_5.00/models"
 targets = ["{0}/lunar_surface_predicted/feature_lists/boulder".format(TARGET_DIR)
             ,"{0}/lunar_surface_m185903952re/feature_lists/boulder".format(TARGET_DIR)]
 
-TARGET = targets[0]
-BL_FILE_NAME = "boulder_list_ls_predicted.txt"
+TARGET = targets[1]
+BL_FILE_NAME = "boulder_list_m185903952re.txt"
 
 def batch_load_bounding_boxes():
     #bboxes = {}
@@ -43,7 +43,7 @@ def load_bounding_boxes(img_name):
     return boxes
 
 
-is_PANGU_image = True
+is_PANGU_image = False
 bboxes = {}
 
 if is_PANGU_image:
@@ -77,6 +77,8 @@ else:
 #         #plt.show()
 #         cv2.imwrite("{0}/outputs/{1}.png".format(IMAGE_DIR,i), image)
 
+def boulder_elevation(size):
+    return 1/(1 + np.exp(-size)) - 0.5
 
 def _generate_boulderlist():
     # list of boulder center points
@@ -106,7 +108,7 @@ def _generate_boulderlist():
                 boulder_size = diameter[0]*scale if diameter[0] < diameter[1] else diameter[1]*scale
 
                 # elevation based of the boulder size
-                elevation = boulder_size*0.5 if boulder_size <= 2 else boulder_size*0.1
+                elevation = boulder_elevation(boulder_size)
 
                 # library num always 1
                 library_num = 1
@@ -125,7 +127,7 @@ def generate_boulderlist(file):
     """identifier PANGU: Boulder List File
 horizontal_scale 1
 offset 0 0
-size {0} {1}""".format(2000, 2000)
+size {0} {1}""".format(1200, 1200)
     )
     with open(os.path.join(TARGET, file), "w") as f:
         for boulder in boulders:
