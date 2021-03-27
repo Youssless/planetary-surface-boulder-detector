@@ -1,7 +1,7 @@
-model/*
-data/*
-frames/*
-truths/*
+boulder_detector/model/*
+boulder_detector/data/*
+boulder_detector/frames/*
+boulder_detector/truths/*
 .DS_Store
 .huskyrc.json
 out

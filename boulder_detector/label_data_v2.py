@@ -7,7 +7,7 @@ import numpy as np
 def isolate_ROI(target):
     '''Isolate the regions of interest
     '''
-    image = cv.imread("../data/frames/{0}".format(target))
+    image = cv.imread("data/frames/{0}".format(target))
         
     # convert the image to hsv format (hue, saturation, value)
     image_hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
@@ -41,7 +41,7 @@ def calculate_ROI(target, ROI, image):
         
         bounding_boxes.append([x, y, w, h])
 
-    cv.imwrite("../data/truths_v2/{0}".format(target), image)
+    cv.imwrite("data/truths_v2/{0}".format(target), image)
 
     return bounding_boxes
 
@@ -50,10 +50,10 @@ def calculate_ROI(target, ROI, image):
 def label_ROI():
     '''Label regions of interest
     '''
-    _, _, filenames = next(walk("../data/frames"))
+    _, _, filenames = next(walk("data/frames"))
     data = []
 
-    for f in filenames:
+    for i, f in enumerate(filenames):
         # isolate the regions of interest
         image, ROI = isolate_ROI(f)
 
@@ -63,11 +63,12 @@ def label_ROI():
         # append bounding boxes in csv format
         for b in boxes:
             data.append([f, b])
-    
+        
+        print("{0}/{1} {2} labelled".format(i, len(filenames)-1, f))
     df = pd.DataFrame(data, columns=['image_id', 'bbox'])
     
     # add bounding boxes to csv
-    df.to_csv('../data/test.csv')
+    df.to_csv('data/bboxes.csv')
         
 if __name__ == "__main__":
     label_ROI()

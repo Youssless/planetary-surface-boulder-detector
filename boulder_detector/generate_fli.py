@@ -1,6 +1,6 @@
 import numpy as np
 import math
-import util.conversions as c
+import util.utils as util
 import os
 import copy
 
@@ -13,12 +13,12 @@ SURFACE_X = 1024
 SURFACE_Y = 512
 IMG_DIM = 512
 
-mode = "test"
+mode = "train"
 celestial_coords = np.array([CAM_HEIGHT, CAM_ROTATION, CAM_TILT]) # range(m), azimuth, altitude
 
 # taking images of the whole lunar surface to use for testing against real boulder points
 if mode == "test":
-    axis_length = math.floor(c.meters_per_pixel(CAM_HEIGHT)*IMG_DIM)
+    axis_length = math.floor(util.meters_per_pixel(CAM_HEIGHT)*IMG_DIM)
     x_center = math.floor(SURFACE_X - axis_length/2)
     y_center = math.floor(SURFACE_Y - axis_length/2)
 
@@ -48,7 +48,7 @@ if mode == "test":
 # generate training images
 elif mode == "train":
     x_center = y_center = 0
-    cam_center_point = np.array([x_center, y_center])
+    cam_center_point = np.array([x_center, y_center, 0])
     T_FACTOR = np.array([
                         [0.0, -1.0, 0.0],
                         [0.0, 1.0, 0.0],
@@ -57,15 +57,15 @@ elif mode == "train":
                     ])
 
     j = 0
-    for i in range(1600):
-        with open("fli/flight1.fli", "a") as f:
+    for i in range(800):
+        with open("fli/flight3.fli", "a") as f:
             f.write(
                 "start\t" + str(cam_center_point[0]) + " " + str(cam_center_point[1]) + " " + str(cam_center_point[2]) + "\t" 
                 + str(celestial_coords[0]) + " " + str(celestial_coords[1]) + " " + str(celestial_coords[2]) + "\n"
                 )
 
         if i != 0 and i % 400 == 0:
-            cam_coords = np.array([0, 0, 0])
+            cam_center_point = np.array([0, 0, 0])
             j += 1
         
-        cam_coords = cam_coords + T_FACTOR[j]
+        cam_center_point = cam_center_point + T_FACTOR[j]

@@ -12,7 +12,7 @@ SIZE_Y = 1200 / 2
 CAM_H = 350
 IMG_SIZE = 1200
 
-BBOXES = 'model/output/bboxes_LRO.json'
+BBOXES = 'model/output/bboxes_LRO_3202.json'
 IMAGE_DIR = 'data/test_data_LRO'
 FLI_FILE = 'fli/flight2.fli'
 
