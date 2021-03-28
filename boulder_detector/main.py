@@ -7,23 +7,20 @@ app = Flask(__name__)
 api = Api(app)
 
 class BoulderDetector(Resource):
-    def get(self, processor, imgs, 
-            image_size, actual_img_width, 
-            surface_x, surface_z, has_camera, 
-            cam_h, fli_file):
+    def get(self):
         # need to import predict.py
         # call method to predict a single image
         # return json of predicted bounding boxes
         result = predict.run(
-            processor=processor,
-            imgs=imgs,
-            image_size=image_size,
-            actual_img_width=actual_img_width,
-            surface_x=surface_x,
-            surface_z=surface_z,
-            has_camera=has_camera,
-            cam_h=cam_h,
-            fli_file=fli_file,
+            processor=request.args.get('processor'),
+            imgs=request.args.get('imgs'),
+            image_size=request.args.get('image_size', type=int),
+            actual_img_width=request.args.get('actual_img_width', type=int),
+            surface_x=request.args.get('surface_x', type=int),
+            surface_z=request.args.get('surface_z', type=int),
+            has_camera=request.args.get('has_camera', type=int),
+            cam_h=request.args.get('cam_h', type=int),
+            fli_file=request.args.get('fli_file'),
         )
 
         # arguments needed:
@@ -45,17 +42,7 @@ class MakeBoulderList(Resource):
         pass
 
 # api endpoint for getting the predicted bounding boxes
-api.add_resource(BoulderDetector, '/predict/{0}/{1}/{2}/{3}/{4}/{5}/{6}/{7}/{8}'.format(
-    '<string:processor>',
-    '<path:imgs>',
-    "<int:image_size>",
-    "<int:actual_img_width>",
-    "<int:surface_x>",
-    "<int:surface_z>",
-    "<int:has_camera>",
-    "<int:cam_h>",
-    "<path:fli_file>"
-))
+api.add_resource(BoulderDetector, '/predict/')
 
 if __name__ == "__main__":
     app.run(debug=True)

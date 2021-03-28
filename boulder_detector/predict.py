@@ -83,7 +83,7 @@ def _generate_boulderlist(bboxes, **kwargs):
             if (-terrain_size[0] <= boulder_center_point[0] <= terrain_size[0]) and (-terrain_size[1] <= boulder_center_point[1] <= terrain_size[1]):
 
                 # size of the boulder is the diameter, PANGU will use this diameter to calculate the area
-                boulder_size = diameter[0]*scale if diameter[0] < diameter[1] else diameter[1]*scale
+                boulder_size = diameter[0] if diameter[0] < diameter[1] else diameter[1]
 
                 # elevation based of the boulder size
                 elevation = utils.boulder_elevation(boulder_size)
@@ -148,12 +148,24 @@ def run(**kwargs):
     
     bboxes = _predict(kwargs['processor'], kwargs['imgs'])
     boulderlist = _generate_boulderlist(bboxes, **kwargs)
+    
+    #testing
+    BL_FILE_NAME = "boulder_list_m185903952re.txt"
+    generate_boulderlist(BL_FILE_NAME, boulderlist)
 
     return boulderlist
 
 
-def generate_boulderlist(file):
-    boulders = _generate_boulderlist()
+def generate_boulderlist(file, boulders):
+    #testing
+    TARGET_DIR = "../../PANGU/PANGU_5.00/models"
+
+    targets = ["{0}/lunar_surface_predicted/feature_lists/boulder".format(TARGET_DIR)
+                ,"{0}/lunar_surface_m185903952re/feature_lists/boulder/{1}".format(TARGET_DIR, file)]
+
+    TARGET = targets[1]
+    
+    print(print(targets[1]))
     # write to boulder list to use as input for PANGU
     write_list = []
     write_list.append(
@@ -162,17 +174,17 @@ horizontal_scale 1
 offset 0 0
 size {0} {1}""".format(1200, 1200)
     )
-    with open(os.path.join(TARGET, file), "w") as f:
+    with open(targets[1], "w+") as f:
         for boulder in boulders:
             for attrib in boulder:
                 write_list.append("{0} {1} {2} {3} {4}".format(attrib[0], attrib[1], attrib[2], attrib[3], attrib[4]))
         
         f.write("\n".join(write_list))
 
-if __name__ == '__main__':
-    bboxes = detect()
+# if __name__ == '__main__':
+#     bboxes = detect()
 
-    print(bboxes)         
+#     print(bboxes)         
 # with open('model/output/bboxes.json', 'w') as outfile:
 #     json.dump(bboxes, outfile, sort_keys=True, indent=4)
 
