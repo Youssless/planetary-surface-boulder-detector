@@ -72,3 +72,6 @@ def meters_per_pixel(cam_h) -> float:
     ratio = 2*cam_h*math.tan(math.radians(FOV/2))-3
 
     return ratio / IMAGE_DIM
+
+def boulder_elevation(size):
+    return 1/(1 + np.exp(-size)) - 0.5
