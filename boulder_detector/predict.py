@@ -58,7 +58,7 @@ def _generate_boulderlist(bboxes, **kwargs):
         cam_h = 0
         cam_pos = np.array([[0, 0]])
         actual_img_width = kwargs['actual_img_width']
-        scale = image_size / actual_img_width
+        scale = 1 # image_size / actual_img_width
     
     # list of boulder center points
     boulder_list = []
@@ -83,7 +83,7 @@ def _generate_boulderlist(bboxes, **kwargs):
             if (-terrain_size[0] <= boulder_center_point[0] <= terrain_size[0]) and (-terrain_size[1] <= boulder_center_point[1] <= terrain_size[1]):
 
                 # size of the boulder is the diameter, PANGU will use this diameter to calculate the area
-                boulder_size = diameter[0] if diameter[0] < diameter[1] else diameter[1]
+                boulder_size = diameter[0]*scale if diameter[0] < diameter[1] else diameter[1]*scale
 
                 # elevation based of the boulder size
                 elevation = utils.boulder_elevation(boulder_size)
@@ -118,7 +118,7 @@ def _predict(processor, imgs):
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 
     device = torch.device(processor)
-    model.load_state_dict(torch.load(os.path.join('model', 'fasterrcnn_boulder_detector_35_3202.pt'), map_location=device))
+    model.load_state_dict(torch.load(os.path.join(os.path.dirname(__file__), 'model', 'fasterrcnn_boulder_detector_35_3202.pt'), map_location=device))
 
 
     model = model.to(device)
@@ -158,7 +158,8 @@ def run(**kwargs):
 
 def generate_boulderlist(file, boulders):
     #testing
-    TARGET_DIR = "../../PANGU/PANGU_5.00/models"
+    TARGET_DIR = "{}\\..\\..\\PANGU\\PANGU_5.00\\models".format(os.path.dirname(__file__))
+    print(TARGET_DIR)
 
     targets = ["{0}/lunar_surface_predicted/feature_lists/boulder".format(TARGET_DIR)
                 ,"{0}/lunar_surface_m185903952re/feature_lists/boulder/{1}".format(TARGET_DIR, file)]

@@ -23,5 +23,6 @@ query = BASE + \
 "cam_h=" + CAM_H + "&" + \
 "fli_file=" + FLI_FILE
 
+print(query)
 result = requests.get(query)
-print(result.json())
+#print(result.json())
