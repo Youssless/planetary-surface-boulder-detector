@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:app/widgets/side_navbar.dart';
+import 'package:filepicker_windows/filepicker_windows.dart';
 
 class Home extends StatefulWidget {
 
@@ -31,10 +32,7 @@ class _Home extends State<Home> {
             )
             
           ],
-          
         ),
-          
-          //ImageView()
       )
     );
   }
@@ -56,87 +54,154 @@ class _Dashboard extends State<Dashboard> {
   @override
   Widget build(BuildContext context) {
     return new Container(
-      alignment: Alignment.center,
+      alignment: Alignment.centerLeft,
       padding: EdgeInsets.all(20),
-      child: new Column(
-        children: <Widget>[
-          Spacer(flex: 6,),
-          SizedBox(
-            width: 300,
-            child: dropDownMenu(),
-          ),
-          Spacer(flex: 1,),
-          SizedBox(
-            width: 300,
-            child: TextFormField(
-              decoration: InputDecoration(
-                //border: InputBorder.none,
-                hintText: 'Image path',
+      child: new LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          return new Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                "Dashboard"
               ),
-            ),
-          ),
-          Spacer(flex: 1,),
-          SizedBox(
-            width: 300,
-            child: TextFormField(
-              decoration: InputDecoration(
-                //border: InputBorder.none,
-                hintText: 'Image size',
+              Spacer(flex: 6,),
+              Text(
+                "Processing"
               ),
-            ),
-          ),
-          Spacer(flex: 1,),
-          SizedBox(
-            width: 300,
-            child: TextFormField(
-              decoration: InputDecoration(
-                //border: InputBorder.none,
-                hintText: 'Surface model size ',
+              SizedBox(
+                width: constraints.maxWidth*0.9,
+                child: DropdownButtonFormField(
+                  value: _value,
+                  hint: Text("Processor"),
+                  items: [
+                    DropdownMenuItem(
+                      child: Text("CPU"),
+                      value: 0,
+                    ),
+                    DropdownMenuItem(
+                      child: Text("GPU"),
+                      value: 1,
+                    )
+                  ],
+                  onChanged: (int? value) {
+                    setState(() {
+                      _value = value;
+                    });
+                  },
+                )
               ),
-            ),
-          ),
-          Spacer(flex: 3,),
-          SizedBox(
-            width: 300,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: () {
-                
-              }, 
-              child: Row(
+              Spacer(flex: 2,),
+              Text(
+                "Input Image"
+              ),
+              SizedBox(
+                width: constraints.maxWidth*0.9,
+                child: TextFormField(
+                  controller: TextEditingController(
+                    text: _path
+                  ),
+                  readOnly: true,
+                  decoration: InputDecoration(
+                    //border: InputBorder.none,
+                    hintText: 'Image path',
+                    suffixIcon: IconButton(
+                      icon: Icon(Icons.folder),
+                      onPressed: () {
+                        setFilePath();
+                      },
+                    )
+                  ),
+                ),
+              ),
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text("Submit")
+                  SizedBox(
+                    width: constraints.maxWidth*0.45,
+                    child: TextFormField(
+                      decoration: InputDecoration(
+                        //border: InputBorder.none,
+                        hintText: 'width (pixels)',
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: constraints.maxWidth*0.45,
+                    child: TextFormField(
+                      decoration: InputDecoration(
+                        //border: InputBorder.none,
+                        hintText: 'height (pixels)',
+                      ),
+                    ),
+                  ),
                 ],
-              )
-            ),
-          ),
-          Spacer(flex: 12,)
-        ],
+              ),
+              
+              Spacer(flex: 2,),
+              Text(
+                "Surface Model"
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: constraints.maxWidth*0.45,
+                    child: TextFormField(
+                      decoration: InputDecoration(
+                        //border: InputBorder.none,
+                        hintText: 'width (pixels)',
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: constraints.maxWidth*0.45,
+                    child: TextFormField(
+                      decoration: InputDecoration(
+                        //border: InputBorder.none,
+                        hintText: 'height (pixels)',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Spacer(flex: 3,),
+              SizedBox(
+                width: constraints.maxWidth*0.9,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () {
+                    
+                  }, 
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("Run")
+                    ],
+                  )
+                ),
+              ),
+              Spacer(flex: 12,)
+            ],
+          );
+        },
       )
     );
   }
 
-  Widget dropDownMenu() {
-    return DropdownButtonFormField(
-      value: _value,
-      hint: Text("Processor"),
-      items: [
-        DropdownMenuItem(
-          child: Text("CPU"),
-          value: 0,
-        ),
-        DropdownMenuItem(
-          child: Text("GPU"),
-          value: 1,
-        )
-      ],
-      onChanged: (int? value) {
-        setState(() {
-          _value = value;
-        });
-      },
-    );
+  void setFilePath() {
+    final file = OpenFilePicker()
+      ..filterSpecification = {
+        "Image Files (*.jpg; *.jpeg; *.png)": "*.jpg;*.jpeg;*.png",
+      }
+      ..title = "Select an image";
+    
+    final result = file.getFile();
+    if (result != null) {
+      print(result.path);
+      setState(() {
+        _path = result.path;
+      });
+    }
   }
 }
 
