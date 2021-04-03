@@ -1,6 +1,9 @@
+import 'package:app/bloc/file/file_cubit.dart';
+import 'package:app/bloc/file/file_state.dart';
 import 'package:flutter/material.dart';
 import 'package:app/widgets/side_navbar.dart';
-import 'package:filepicker_windows/filepicker_windows.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:io';
 
 class Home extends StatefulWidget {
 
@@ -46,13 +49,17 @@ class Dashboard extends StatefulWidget {
 }
 
 class _Dashboard extends State<Dashboard> {
-  int? _value;
+  int? _value = 0;
   String _path = "";
 
-  final _formKey = GlobalKey<FormState>();
+  TextEditingController _pathController = new TextEditingController();
+  TextEditingController _widthController = new TextEditingController();
+  TextEditingController _heightController = new TextEditingController();
+
 
   @override
   Widget build(BuildContext context) {
+
     return new Container(
       alignment: Alignment.centerLeft,
       padding: EdgeInsets.all(20),
@@ -79,64 +86,76 @@ class _Dashboard extends State<Dashboard> {
                       value: 0,
                     ),
                     DropdownMenuItem(
-                      child: Text("GPU"),
+                      child: Text(
+                        "GPU",
+                        style: TextStyle(color: Colors.grey),
+                      ),
                       value: 1,
+                      onTap: null
                     )
                   ],
-                  onChanged: (int? value) {
-                    setState(() {
-                      _value = value;
-                    });
-                  },
+                  onChanged: null
                 )
               ),
               Spacer(flex: 2,),
               Text(
                 "Input Image"
               ),
-              SizedBox(
-                width: constraints.maxWidth*0.9,
-                child: TextFormField(
-                  controller: TextEditingController(
-                    text: _path
-                  ),
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    //border: InputBorder.none,
-                    hintText: 'Image path',
-                    suffixIcon: IconButton(
-                      icon: Icon(Icons.folder),
-                      onPressed: () {
-                        setFilePath();
-                      },
-                    )
-                  ),
-                ),
+              BlocConsumer<ImageFileCubit, ImageFileState>(
+                listener: (BuildContext context, ImageFileState state) {
+                  _pathController.text = state.path;
+                  _widthController.text = state.size[0].toString();
+                  _heightController.text = state.size[1].toString();
+                },
+                builder: (BuildContext context, ImageFileState state) {
+                  return new SizedBox(
+                    width: constraints.maxWidth*0.9,
+                      child: TextFormField(
+                        controller: _pathController,
+                        readOnly: true,
+                        decoration: InputDecoration(
+                          //border: InputBorder.none,
+                          hintText: 'Image path',
+                          suffixIcon: IconButton(
+                            icon: Icon(Icons.folder),
+                            onPressed: () {
+                              BlocProvider.of<ImageFileCubit>(context).open();
+                            },
+                          )
+                        ),
+                      )
+                    );
+                },
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: constraints.maxWidth*0.45,
-                    child: TextFormField(
-                      decoration: InputDecoration(
-                        //border: InputBorder.none,
-                        hintText: 'width (pixels)',
+              BlocBuilder<ImageFileCubit, ImageFileState>(
+                builder: (BuildContext context, ImageFileState state) {
+                  return new Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: constraints.maxWidth*0.45,
+                        child: TextFormField(
+                          controller: _widthController,
+                          decoration: InputDecoration(
+                            //border: InputBorder.none,
+                            hintText: 'width (meters)',
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  SizedBox(
-                    width: constraints.maxWidth*0.45,
-                    child: TextFormField(
-                      decoration: InputDecoration(
-                        //border: InputBorder.none,
-                        hintText: 'height (pixels)',
+                      SizedBox(
+                        width: constraints.maxWidth*0.45,
+                        child: TextFormField(
+                          controller: _heightController,
+                          decoration: InputDecoration(
+                            //border: InputBorder.none,
+                            hintText: 'height (meters)',
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ],
+                    ],
+                  );
+                }
               ),
-              
               Spacer(flex: 2,),
               Text(
                 "Surface Model"
@@ -187,22 +206,6 @@ class _Dashboard extends State<Dashboard> {
       )
     );
   }
-
-  void setFilePath() {
-    final file = OpenFilePicker()
-      ..filterSpecification = {
-        "Image Files (*.jpg; *.jpeg; *.png)": "*.jpg;*.jpeg;*.png",
-      }
-      ..title = "Select an image";
-    
-    final result = file.getFile();
-    if (result != null) {
-      print(result.path);
-      setState(() {
-        _path = result.path;
-      });
-    }
-  }
 }
 
 class ImageView extends StatefulWidget {
@@ -215,11 +218,50 @@ class _ImageView extends State<ImageView> {
 
   @override
   Widget build(BuildContext context) {
-    return new Container(
-      child: new Row(
-        children: [
-        ],
-      ),
+    return new LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) 
+        => BlocBuilder<ImageFileCubit, ImageFileState>(
+          builder: (BuildContext context, ImageFileState state) {
+            return state.path.isNotEmpty ? 
+              new Container(
+                alignment: Alignment.center,
+                constraints: BoxConstraints(
+                  maxHeight: constraints.maxHeight*0.95,
+                  maxWidth: constraints.maxWidth,
+                ),
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: FileImage(File(state.path)),
+                    fit: BoxFit.contain
+                  )
+                ),
+              )
+              :
+              new Container(
+                alignment: Alignment.center,
+                child: Text("Nothing to display"),
+              );
+          }
+        )
     );
+    //   child: new Row(
+    //     mainAxisAlignment: MainAxisAlignment.center,
+    //     children: [
+    //       BlocBuilder<FileCubit, FileState>(
+    //         builder: (BuildContext context, FileState state) {
+    //           return state.path.isNotEmpty ?
+    //             Image.file(
+    //                 File(state.path),
+    //                 fit: BoxFit.cover,
+    //               )
+    //             :
+    //             new Container(
+    //               child: Text("Nothing to display"),
+    //             );
+    //         }
+    //       )
+    //     ],
+    //   ),
+    // );
   }
 }
