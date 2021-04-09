@@ -3,14 +3,8 @@ import 'package:flutter/material.dart';
 import 'screens/dashboard.dart';
 import 'util/theme.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'dart:io';
 
 void main() {
-  // Process.start("start", ["..\\server.bat"], runInShell: true)
-  //   .then((value) => {
-  //     stdout.write(value.stdout),
-  //     stderr.write(value.stderr)
-  //   });
   runApp(PlanetaryBoulderDetector());
 }
 
@@ -29,14 +23,16 @@ class _PlanetaryBoulderDetector extends State<PlanetaryBoulderDetector> {
       providers: [
         BlocProvider<ImageFileCubit>(
           create: (context) => ImageFileCubit()
-        )
+        ),
+        // BlocProvider(
+        //   create: (context) => ServerBloc(),
+        // )
       ], 
       child: MaterialApp(
         title: 'Planetary Boulder Detector',
         theme: DefaultTheme,
-        home: Home(),
+        home: Home()
       )
     );
-    
   }
 }

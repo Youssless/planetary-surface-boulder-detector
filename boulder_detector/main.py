@@ -13,7 +13,7 @@ class BoulderDetector(Resource):
         # return json of predicted bounding boxes
         result = predict.run(
             processor=request.args.get('processor'),
-            imgs=request.args.get('imgs'),
+            imgs=request.args.get('imgs').replace('%2f', '\\'),
             image_size=request.args.get('image_size', type=int),
             actual_img_width=request.args.get('actual_img_width', type=int),
             surface_x=request.args.get('surface_x', type=int),

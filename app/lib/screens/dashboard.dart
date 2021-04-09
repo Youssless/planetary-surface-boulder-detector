@@ -2,18 +2,26 @@ import 'package:app/bloc/file/file_cubit.dart';
 import 'package:app/bloc/file/file_state.dart';
 import 'package:flutter/material.dart';
 import 'package:app/widgets/side_navbar.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:io';
+
+import 'package:app/model/boulder_list.dart';
+import 'package:app/network/boulder_detecotor_request.dart';
 
 class Home extends StatefulWidget {
 
   @override
   _Home createState() => new _Home();
-
 }
 
 class _Home extends State<Home> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +41,6 @@ class _Home extends State<Home> {
               flex: 20,
               child: ImageView()
             )
-            
           ],
         ),
       )
@@ -55,7 +62,14 @@ class _Dashboard extends State<Dashboard> {
   TextEditingController _pathController = new TextEditingController();
   TextEditingController _widthController = new TextEditingController();
   TextEditingController _heightController = new TextEditingController();
+  TextEditingController _sxController = new TextEditingController();
+  TextEditingController _szController = new TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+    
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -166,6 +180,7 @@ class _Dashboard extends State<Dashboard> {
                   SizedBox(
                     width: constraints.maxWidth*0.45,
                     child: TextFormField(
+                      controller: _sxController,
                       decoration: InputDecoration(
                         //border: InputBorder.none,
                         hintText: 'width (pixels)',
@@ -173,8 +188,9 @@ class _Dashboard extends State<Dashboard> {
                     ),
                   ),
                   SizedBox(
-                    width: constraints.maxWidth*0.45,
+                    width: constraints.maxWidth*0.45, 
                     child: TextFormField(
+                      controller: _szController,
                       decoration: InputDecoration(
                         //border: InputBorder.none,
                         hintText: 'height (pixels)',
@@ -189,7 +205,19 @@ class _Dashboard extends State<Dashboard> {
                 height: 50,
                 child: ElevatedButton(
                   onPressed: () {
-                    
+                    fetchBoulderList(
+                      {
+                        "processor": "cpu",
+                        "imgs": _pathController.text,
+                        "image_size": _widthController.text,
+                        "actual_img_width": "832",
+                        "surface_x": _sxController.text,
+                        "surface_z": _szController.text,
+                        "has_camera": "False",
+                        "cam_h": "0",
+                        "fil_file": "None"
+                      }
+                    ). then((value) => print(value.boulders));
                   }, 
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
