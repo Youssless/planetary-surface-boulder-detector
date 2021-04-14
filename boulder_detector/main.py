@@ -11,16 +11,17 @@ class BoulderDetector(Resource):
         # need to import predict.py
         # call method to predict a single image
         # return json of predicted bounding boxes
-        result = predict.run(
+        out_img, boulder_list = predict.run(
             processor=request.args.get('processor'),
             imgs=request.args.get('imgs').replace('%2f', '\\'),
             image_size=request.args.get('image_size', type=int),
-            actual_img_width=request.args.get('actual_img_width', type=int),
+            #actual_img_width=request.args.get('actual_img_width', type=int),
             surface_x=request.args.get('surface_x', type=int),
             surface_z=request.args.get('surface_z', type=int),
-            has_camera=request.args.get('has_camera', type=int),
-            cam_h=request.args.get('cam_h', type=int),
-            fli_file=request.args.get('fli_file'),
+            bl_out_file=request.args.get('bl_out_file').replace('%2f', '\\')
+            #has_camera=request.args.get('has_camera', type=int),
+            #cam_h=request.args.get('cam_h', type=int),
+            #fli_file=request.args.get('fli_file'),
         )
 
         # arguments needed:
@@ -35,11 +36,12 @@ class BoulderDetector(Resource):
         - scale
         '''
         
-        return {"data": result}
-
-class MakeBoulderList(Resource):
-    def get(self):
-        pass
+        return {
+            "data": {
+                "out_img": out_img,
+                "boulder_list": boulder_list
+            }
+        }
 
 # api endpoint for getting the predicted bounding boxes
 api.add_resource(BoulderDetector, '/predict/')

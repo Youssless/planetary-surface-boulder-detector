@@ -5,7 +5,14 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 
-class ImageFileCubit extends Cubit<ImageFileState> {
+abstract class FileCubit<T> extends Cubit<T>{
+
+  FileCubit(T initialState) : super(initialState);
+
+  void open();
+}
+
+class ImageFileCubit extends FileCubit<ImageFileState> {
 
   ImageFileCubit() : super(ImageFileState(path: "", size: [0, 0]));
 
@@ -34,5 +41,35 @@ class ImageFileCubit extends Cubit<ImageFileState> {
         }
       );
     }
+  }
+
+  void fetch(String path) {
+    emit(ImageFileState.fetch(
+      path: path,
+      )
+    );
+  }
+}
+
+class BLFileState {
+  String path;
+  BLFileState({required this.path});
+}
+
+class BLFileCubit extends FileCubit<BLFileState> {
+  BLFileCubit() : super(BLFileState(path: ""));
+
+  void open() {
+   final file =  SaveFilePicker()
+    ..filterSpecification = {
+      "Text Document (.txt)": ".*txt"
+    }
+    ..title = "Boulder list save location"
+    ..defaultExtension = "txt";
+   final result = file.getFile();
+
+   if (result != null) {
+     emit(BLFileState(path: result.path));
+   }
   }
 }

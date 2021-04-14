@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'screens/dashboard.dart';
 import 'util/theme.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:app/bloc/network/network_cubit.dart';
 
 void main() {
   runApp(PlanetaryBoulderDetector());
@@ -24,9 +25,12 @@ class _PlanetaryBoulderDetector extends State<PlanetaryBoulderDetector> {
         BlocProvider<ImageFileCubit>(
           create: (context) => ImageFileCubit()
         ),
-        // BlocProvider(
-        //   create: (context) => ServerBloc(),
-        // )
+        BlocProvider<BLFileCubit>(
+          create: (context) => BLFileCubit(),
+        ),
+        BlocProvider<RequestCubit>(
+          create: (context) => RequestCubit(),
+        )
       ], 
       child: MaterialApp(
         title: 'Planetary Boulder Detector',
