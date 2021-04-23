@@ -55,7 +55,7 @@ def annotate_image(bboxes):
             cv2.rectangle(image, xy_min, xy_max, (0, 0, 255), thickness=1)
         
         file_name = file_name.replace('.png', '')
-        save_loc = os.getcwd() + "/" + os.path.join("temp","{}_predicted.png".format(file_name))
+        save_loc = os.getcwd() + "\\" + os.path.join("temp","{}_predicted.png".format(file_name))
         cv2.imwrite(save_loc, image)
 
     return save_loc
@@ -184,7 +184,5 @@ size {0} {1}""".format(kwargs['surface_x'], kwargs['surface_z'])
         for boulder in boulders:
             for attrib in boulder:
                 write_list.append("{0} {1} {2} {3} {4}".format(attrib[0], attrib[1], attrib[2], attrib[3], attrib[4]))
-        
+
         f.write("\n".join(write_list))
-
-
